@@ -15,15 +15,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const okButton = document.getElementById('okButton');
     const closeButton = document.querySelector('.close-button');
 
-    // Audio elements
-    const suspenseMusic = document.getElementById('suspense-music');
-    const winSound = document.getElementById('win-sound');
+    // === Audio Synthesis with Tone.js ===
+    // Membuat synthesizer untuk suara. Ini menggantikan tag <audio>
+    const suspenseSynth = new Tone.Synth().toDestination();
+    const winSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+    let suspenseLoop;
 
     // === State ===
     let entries = [];
     const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22'];
     let currentAngle = 0;
-    let spinAngle = 0;
     let spinVelocity = 0;
     let isSpinning = false;
     let lastWinner = null;
@@ -34,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
      * Menggambar roda pada canvas berdasarkan entri yang ada.
      */
     const drawWheel = () => {
-        // 1. Dapatkan entri dari textarea
         entries = entriesTextarea.value.split('\n').filter(entry => entry.trim() !== '');
         if (entries.length === 0) {
             clearCanvas();
@@ -46,13 +46,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const centerY = canvas.height / 2;
         const radius = canvas.width / 2 - 10;
 
-        // 2. Bersihkan dan atur canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(currentAngle);
 
-        // 3. Gambar setiap segmen
         entries.forEach((entry, i) => {
             const angle = i * arcSize;
             ctx.fillStyle = colors[i % colors.length];
@@ -63,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.lineTo(0, 0);
             ctx.fill();
 
-            // Gambar teks
             ctx.save();
             ctx.fillStyle = 'white';
             ctx.font = 'bold 16px Poppins';
@@ -76,7 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         ctx.restore();
 
-        // 4. Gambar lingkaran tengah
         ctx.fillStyle = 'white';
         ctx.beginPath();
         ctx.arc(centerX, centerY, 50, 0, 2 * Math.PI);
@@ -105,18 +101,24 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Memulai animasi putaran roda.
      */
-    const spin = () => {
+    const spin = async () => {
         if (isSpinning || entries.length < 2) return;
+        
+        // Memulai konteks audio saat pengguna berinteraksi (penting untuk browser)
+        await Tone.start();
+        
         isSpinning = true;
         winnerDisplay.textContent = '...';
 
         // Atur parameter putaran
-        spinAngle = Math.random() * 10 + 10; // Putaran awal
-        spinVelocity = 0.1 + Math.random() * 0.05; // Kecepatan
+        spinVelocity = 0.1 + Math.random() * 0.05;
 
-        // Mulai musik menegangkan
-        suspenseMusic.currentTime = 0;
-        suspenseMusic.play().catch(e => console.error("Audio play failed:", e));
+        // Mulai musik menegangkan menggunakan Tone.js
+        if (suspenseLoop) suspenseLoop.dispose(); // Bersihkan loop sebelumnya
+        suspenseLoop = new Tone.Loop(time => {
+            suspenseSynth.triggerAttackRelease("C2", "8n", time);
+        }, "8n").start(0);
+        Tone.Transport.start();
 
         animateSpin();
     };
@@ -145,17 +147,22 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     const getWinner = () => {
         // Hentikan musik menegangkan
-        suspenseMusic.pause();
+        if (suspenseLoop) {
+            Tone.Transport.stop();
+            suspenseLoop.dispose();
+        }
         
         const totalSegments = entries.length;
         const arcSize = (2 * Math.PI) / totalSegments;
-        
-        // Koreksi sudut agar 0 berada di posisi penunjuk (kanan)
         const finalAngle = currentAngle % (2 * Math.PI);
         const correctedAngle = (2 * Math.PI) - finalAngle;
-        
         const winnerIndex = Math.floor(correctedAngle / arcSize);
         lastWinner = entries[winnerIndex];
+
+        // Mainkan suara kemenangan
+        const now = Tone.now();
+        winSynth.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
+        winSynth.triggerAttackRelease(["C5"], "8n", now + 0.2);
 
         winnerDisplay.textContent = lastWinner;
         showWinnerModal(lastWinner);
@@ -164,9 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const showWinnerModal = (winner) => {
         modalWinnerName.textContent = winner;
         modal.style.display = 'block';
-        removeWinnerCheckbox.checked = false; // Reset checkbox
-        winSound.currentTime = 0;
-        winSound.play().catch(e => console.error("Audio play failed:", e));
+        removeWinnerCheckbox.checked = false;
     };
     
     const hideWinnerModal = () => {
@@ -180,9 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
         lastWinner = null;
     };
 
-    /**
-     * Mengacak urutan nama di textarea.
-     */
     const shuffleEntries = () => {
         let currentEntries = entriesTextarea.value.split('\n');
         for (let i = currentEntries.length - 1; i > 0; i--) {
@@ -193,9 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
         drawWheel();
     };
 
-    /**
-     * Mengurutkan nama di textarea.
-     */
     const sortEntries = () => {
         let currentEntries = entriesTextarea.value.split('\n').filter(e => e.trim() !== '');
         currentEntries.sort((a, b) => a.localeCompare(b));
@@ -209,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
     shuffleBtn.addEventListener('click', shuffleEntries);
     sortBtn.addEventListener('click', sortEntries);
     
-    // Modal listeners
     closeButton.addEventListener('click', hideWinnerModal);
     okButton.addEventListener('click', hideWinnerModal);
     window.addEventListener('click', (event) => {
