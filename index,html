@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roda Putar Keberuntungan</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Kolom Kiri: Roda Putar -->
+        <div class="wheel-container">
+            <h1>Roda Putar Keberuntungan</h1>
+            <div class="wheel-wrapper">
+                <canvas id="wheelCanvas" width="500" height="500"></canvas>
+                <div class="wheel-pointer"></div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Panel Kontrol -->
+        <div class="controls-container">
+            <h2>Panel Kontrol</h2>
+            
+            <div class="control-group">
+                <label for="entries">Masukkan Nama (satu per baris):</label>
+                <textarea id="entries" rows="10">Ali
+Beatriz
+Charles
+Dlya
+Eric
+Fatima
+Gabriel
+Hanna</textarea>
+            </div>
+
+            <div class="button-group">
+                <button id="updateBtn">Update Roda</button>
+                <button id="shuffleBtn">Acak Nama</button>
+                <button id="sortBtn">Urutkan Nama</button>
+            </div>
+
+            <div id="results" class="results-area">
+                <h3>Pemenang:</h3>
+                <p id="winner-display">-</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk menampilkan pemenang -->
+    <div id="winnerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p>Selamat kepada</p>
+            <h2 id="modalWinnerName"></h2>
+            <div class="modal-options">
+                <label>
+                    <input type="checkbox" id="removeWinnerCheckbox">
+                    Hapus pemenang dari roda
+                </label>
+            </div>
+            <button id="okButton">OK</button>
+        </div>
+    </div>
+
+    <!-- Elemen Audio untuk Musik Latar -->
+    <audio id="suspense-music" src="https://www.myinstants.com/media/sounds/tension-drum-roll.mp3" preload="auto"></audio>
+    <audio id="win-sound" src="https://www.myinstants.com/media/sounds/yay-fanfare.mp3" preload="auto"></audio>
+
+    <script src="script.js"></script>
+</body>
+</html>
