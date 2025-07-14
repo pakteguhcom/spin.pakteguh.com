@@ -1,4 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // === Pengecekan Pustaka Audio ===
+    // Memastikan Tone.js berhasil dimuat sebelum menjalankan kode lain.
+    if (typeof Tone === 'undefined') {
+        console.error('FATAL: Pustaka audio (Tone.js) gagal dimuat. Pastikan file index.html Anda sudah benar dan terhubung ke internet untuk memuat pustaka.');
+        alert('Gagal memuat komponen audio. Silakan periksa koneksi internet Anda dan muat ulang halaman.');
+        return;
+    }
+
     // === DOM Elements ===
     const canvas = document.getElementById('wheelCanvas');
     const ctx = canvas.getContext('2d');
